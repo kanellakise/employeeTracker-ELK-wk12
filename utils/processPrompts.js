@@ -1,9 +1,10 @@
 const db = require("../config/connection");
-const promptUser = require('../index.js');
+const cTable = require('console.table');
+const promptUser = require('../index');
 
 // view all departments
 const allDept = () => {
-    const sql = `SELECT * FROM department`;
+    const sql = `SELECT dept_name AS "Departments" FROM department;`;
 
     db.query(sql, (err, results) => {
         if (err) throw err;
