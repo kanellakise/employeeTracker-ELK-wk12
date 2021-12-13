@@ -32,11 +32,11 @@ Elijah Kanellakis
 
 ### GitHub Repository Link
 
-[GitHub Link](https://github.com/kanellakise/noteTaker-ELK-wk11)
+[GitHub Link](https://github.com/kanellakise/employeeTracker-ELK-wk12)
 
-### Deployed Heroku App Link
+### Video Walkthrough Link
 
-[Heroku Link](https://shielded-beyond-30091.herokuapp.com/)
+[Video Link]()
 
 ## Features
 

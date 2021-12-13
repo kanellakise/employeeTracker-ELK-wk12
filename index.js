@@ -126,32 +126,44 @@ const addDept = () => {
 
 // add a role
 const addRole = () => {
-    const addDeptQuestions = [
-        {
-            type: 'input',
-            name: 'dept_name',
-            message: 'Please enter a department name',
-            validate: roleInput => {
-                if (roleInput) {
-                    return true;
-                } else {
-                    console.log('Please enter a department name!');
-                    return false;
-                }
+    const addRoleQuery = `SELECT * FROM role; SELECT * FROM department`
+    db.query(addRoleQuery, (err, results) => {
+        if (err) throw err;
+
+        console.log('');
+        console.table('List of current Roles:'), results[0];
+
+        inquirer.prompt([
+            {
+                name: 'newTitle',
+                type: 'input',
+                message: 'Please enter the new role title:'
+            },
+            {
+                name: 'newSalary',
+                type: 'input',
+                message: 'Please enter the salary for the new Title:'
+            },
+            {
+                name: 'dept',
+                type: 'list',
+                choices: function () {
+                    let choiceArray = results[1].map(choice => choice.dept_name);
+                    return choiceArray;
+                },
+                message: 'Select the Department that will contain this role:'
             }
-        }
-    ];
-
-    inquirer.prompt(addDeptQuestions).then((answers) => {
-        const sql = `INSERT INTO department (dept_name) VALUES ('${answers.dept_name}')`
-
-        db.query(sql, (err, results) => {
-            if (err) throw err;
-            console.log('Department Added!');
-        });
-        setTimeout(promptUser, 1000);
-    });
-};
+        ]).then((answer) => {
+            db.query(
+                `INSERT INTO role(title, salary, department_id) 
+                VALUES
+                ("${answer.newTitle}", "${answer.newSalary}", 
+                (SELECT id FROM department WHERE dept_name = "${answer.dept}"));`
+            )
+            setTimeout(promptUser, 1000);
+        })
+    })
+}
 
 // add an employee
 const addEmp = () => {
@@ -159,7 +171,7 @@ const addEmp = () => {
     const addEmployeeQuestions = ['What is their first name?', 'What is their last name?', 'What role should be assigned?', 'What manager should be assigned?']
 
     db.query(roleQuery, (err, results) => {
-        
+
         if (err) throw err;
 
         inquirer.prompt([
@@ -209,7 +221,6 @@ const addEmp = () => {
 const updateEmpRole = () => {
     const query = `SELECT CONCAT (first_name," ",last_name) AS full_name FROM employee; SELECT title FROM role`
     db.query(query, (err, results) => {
-        console.log(results);
         if (err) throw err;
 
         inquirer.prompt([
