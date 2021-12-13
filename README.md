@@ -36,7 +36,7 @@ Elijah Kanellakis
 
 ### Video Walkthrough Link
 
-[Video Link]()
+[Video Link](https://watch.screencastify.com/v/4mJyiJXslan3HYDTy7TN)
 
 ## Features
 
