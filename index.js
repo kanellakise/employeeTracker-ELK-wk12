@@ -9,8 +9,8 @@ const promptUser = () => {
             {
                 type: 'list',
                 name: 'menu',
-                message: 'What would you like to do?',
-                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role', 'Quit program']
+                message: 'Welcome to Employee Tracker! What would you like to do?',
+                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role']
             }
         ])
         .then(answers => {
@@ -34,7 +34,7 @@ const promptUser = () => {
                     addEmp();
                     break;
                 case 'Update an employee role':
-                    updateEmp();
+                    updateEmpRole();
                     break;
             }
         });
@@ -155,77 +155,90 @@ const addRole = () => {
 
 // add an employee
 const addEmp = () => {
-    const addEmpQuestions = [
-        {
-            type: 'input',
-            name: 'first_name',
-            message: "Please enter the employee's first name",
-            validate: empInput => {
-                if (empInput) {
-                    return true;
-                } else {
-                    console.log('Please enter a first name!');
-                    return false;
-                }
-            }
-        },
-        {
-            type: 'input',
-            name: 'last_name',
-            message: "Please enter the employee's last name",
-            validate: empInput => {
-                if (empInput) {
-                    return true;
-                } else {
-                    console.log('Please enter a last name!');
-                    return false;
-                }
-            }
-        },
-        {
-            type: 'input',
-            name: 'role',
-            message: "Please enter desired role ID number",
-            validate: empInput => {
-                if (empInput) {
-                    return true;
-                } else {
-                    console.log('Please enter a role ID number!');
-                    return false;
-                }
-            }
-        },
-        {
-            type: 'input',
-            name: 'manager',
-            message: "Please select desired manager's employee ID number",
-            validate: empInput => {
-                if (empInput) {
-                    return true;
-                } else {
-                    console.log('Please enter an employee ID number!');
-                    return false;
-                }
-            }
-        }
-    ];
+    const roleQuery = `SELECT * from role; SELECT CONCAT (e.first_name," ",e.last_name) AS full_name FROM employee e`
+    const addEmployeeQuestions = ['What is their first name?', 'What is their last name?', 'What role should be assigned?', 'What manager should be assigned?']
 
-    inquirer.prompt(addEmpQuestions).then((answers) => {
-        const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                    VALUES 
-                        ('${answers.first_name}', '${answers.last_name}', ${answers.role}, ${answers.manager})`
+    db.query(roleQuery, (err, results) => {
+        
+        if (err) throw err;
 
-        db.query(sql, (err, results) => {
-            if (err) throw err;
-            console.log('Employee Added!');
-        });
-        setTimeout(promptUser, 1000);
-    });
-};
+        inquirer.prompt([
+            {
+                name: 'firstName',
+                type: 'input',
+                message: addEmployeeQuestions[0]
+
+            },
+            {
+                name: 'lastName',
+                type: 'input',
+                message: addEmployeeQuestions[1]
+            },
+            {
+                name: 'role',
+                type: 'list',
+                choices: function () {
+                    let choiceArray = results[0].map(choice => choice.title);
+                    return choiceArray;
+                },
+                message: addEmployeeQuestions[2]
+
+            },
+            {
+                name: 'manager',
+                type: 'list',
+                choices: function () {
+                    let choiceArray = results[1].map(choice => choice.full_name);
+                    return choiceArray;
+                },
+                message: addEmployeeQuestions[3]
+
+            }
+        ]).then((answer) => {
+            db.query(
+                `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES(?, ?, 
+                (SELECT id FROM role WHERE title = ? ), 
+                (SELECT id FROM (SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ? ) AS tmptable))`, [answer.firstName, answer.lastName, answer.role, answer.manager]
+            )
+            setTimeout(promptUser, 1000);
+        })
+    })
+}
 
 // update an employee role
-const updateEmp = () => {
+const updateEmpRole = () => {
+    const query = `SELECT CONCAT (first_name," ",last_name) AS full_name FROM employee; SELECT title FROM role`
+    db.query(query, (err, results) => {
+        console.log(results);
+        if (err) throw err;
 
+        inquirer.prompt([
+            {
+                name: 'empl',
+                type: 'list',
+                choices: function () {
+                    let choiceArray = results[0].map(choice => choice.full_name);
+                    return choiceArray;
+                },
+                message: 'Select an employee to update their role:'
+            },
+            {
+                name: 'newRole',
+                type: 'list',
+                choices: function () {
+                    let choiceArray = results[1].map(choice => choice.title);
+                    return choiceArray;
+                }
+            }
+        ]).then((answer) => {
+            db.query(`UPDATE employee 
+            SET role_id = (SELECT id FROM role WHERE title = ? ) 
+            WHERE id = (SELECT id FROM(SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ?) AS tmptable)`, [answer.newRole, answer.empl], (err, results) => {
+                if (err) throw err;
+                setTimeout(promptUser, 1000);
+            })
+        })
+    })
 };
 
 module.exports = promptUser;
