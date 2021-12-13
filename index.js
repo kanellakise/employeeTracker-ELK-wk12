@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const db = require("./config/connection");
 const consoleTable = require('console.table');
+const mysql = require('mysql2');
 
 const promptUser = () => {
     return inquirer
@@ -9,7 +10,7 @@ const promptUser = () => {
                 type: 'list',
                 name: 'menu',
                 message: 'What would you like to do?',
-                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role']
+                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role', 'Quit program']
             }
         ])
         .then(answers => {
@@ -53,7 +54,7 @@ const allDept = () => {
 // view all roles
 const allRoles = () => {
     const sql = `SELECT 
-                    role.title AS Title, role.salary AS Salary, dept_name AS Department
+                    role.id AS ID, role.title AS Title, role.salary AS Salary, dept_name AS Department
                 FROM
                     role
                         JOIN
@@ -94,23 +95,132 @@ const allEmp = () => {
 
 // add a department
 const addDept = () => {
-    const sql = ``
+    const addDeptQuestions = [
+        {
+            type: 'input',
+            name: 'dept_name',
+            message: 'Please enter a department name',
+            validate: deptInput => {
+                if (deptInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a department name!');
+                    return false;
+                }
+            }
+        }
+    ];
 
-    db.query(sql, (err, results) => {
-        if (err) throw err;
-        console.table(('Department Added!'), results);
+    inquirer.prompt(addDeptQuestions).then((answers) => {
+        console.log(answers.dept_name);
+        const deptName = answers.dept_name;
+        const sql = `INSERT INTO department (dept_name) VALUES ('${deptName}');`
+        console.log(sql);
+        db.query(sql, (err, results) => {
+            if (err) throw err;
+            console.log('Department Added!');
+        });
+        setTimeout(promptUser, 1000);
     });
-    setTimeout(promptUser, 1000);
 };
 
 // add a role
 const addRole = () => {
+    const addDeptQuestions = [
+        {
+            type: 'input',
+            name: 'dept_name',
+            message: 'Please enter a department name',
+            validate: roleInput => {
+                if (roleInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a department name!');
+                    return false;
+                }
+            }
+        }
+    ];
 
+    inquirer.prompt(addDeptQuestions).then((answers) => {
+        const sql = `INSERT INTO department (dept_name) VALUES ('${answers.dept_name}')`
+
+        db.query(sql, (err, results) => {
+            if (err) throw err;
+            console.log('Department Added!');
+        });
+        setTimeout(promptUser, 1000);
+    });
 };
 
 // add an employee
 const addEmp = () => {
+    const addEmpQuestions = [
+        {
+            type: 'input',
+            name: 'first_name',
+            message: "Please enter the employee's first name",
+            validate: empInput => {
+                if (empInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a first name!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'last_name',
+            message: "Please enter the employee's last name",
+            validate: empInput => {
+                if (empInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a last name!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'role',
+            message: "Please enter desired role ID number",
+            validate: empInput => {
+                if (empInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a role ID number!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'manager',
+            message: "Please select desired manager's employee ID number",
+            validate: empInput => {
+                if (empInput) {
+                    return true;
+                } else {
+                    console.log('Please enter an employee ID number!');
+                    return false;
+                }
+            }
+        }
+    ];
 
+    inquirer.prompt(addEmpQuestions).then((answers) => {
+        const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+                    VALUES 
+                        ('${answers.first_name}', '${answers.last_name}', ${answers.role}, ${answers.manager})`
+
+        db.query(sql, (err, results) => {
+            if (err) throw err;
+            console.log('Employee Added!');
+        });
+        setTimeout(promptUser, 1000);
+    });
 };
 
 // update an employee role
